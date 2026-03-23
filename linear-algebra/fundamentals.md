@@ -1,206 +1,276 @@
-# 컴퓨터비전/딥러닝 연구자를 위한 선형대수 실전 가이드
+# 컴퓨터비전/딥러닝 아키텍처 연구자를 위한 선형대수 Fundamentals
 
 ## 1. 이 문서의 목적
-이 문서는 선형대수를 "시험 과목"이 아니라 "논문 읽기, 아키텍처 설계, 학습 안정화, 성능 디버깅"의 언어로 재정렬한다.  
-핵심은 다음 3가지를 동시에 잡는 것이다.
-- 직관: 이 개념이 어떤 기하/정보 구조를 표현하는가
-- 수식: 논문에서 등장하는 표현을 바로 읽을 수 있는가
-- 구현 감각: PyTorch 코드에서 shape/연산/수치 안정성으로 이어지는가
+이 문서는 "수학 교과서 요약"이 아니라, 다음 상황에서 바로 참조할 수 있는 실전 노트다.
+- 논문을 읽을 때: 수식이 왜 필요한지, 모델 설계에서 어떤 의사결정을 유도하는지 파악
+- 모델을 설계할 때: 표현 공간, 연산 구조, 최적화 안정성을 선형대수 관점으로 점검
+- 디버깅할 때: 성능 저하를 rank 붕괴, conditioning 악화, 거리/정규화 미스매치로 해석
+
+핵심 원칙:
+- 증명보다 직관
+- 직관만이 아니라 수식
+- 수식만이 아니라 PyTorch 구현 감각
 
 ## 2. 왜 이 개념이 비전/딥러닝에 중요한가
-- CNN: convolution, 1x1 conv, attention projection은 선형 변환의 조합이다.
-- Representation learning: embedding 공간의 구조(거리, 각도, rank, subspace)가 성능을 좌우한다.
-- Optimization: gradient, Jacobian, Hessian은 손실 지형과 학습 안정성을 설명한다.
-- Metric learning: 코사인 유사도, Mahalanobis 거리, 정규화는 선형대수 그 자체다.
-- Transformer in Vision: Q/K/V projection, low-rank 근사, whitening이 핵심 도구다.
-- 3D vision: pose/geometry는 회전행렬, 고유값 분해, SVD 기반 추정 위에서 작동한다.
+- CNN: convolution/1x1 conv/group conv/depthwise conv는 모두 선형 연산자 구조 설계 문제다.
+- Representation learning: 임베딩 품질은 거리(norm/distance), 각도(orthogonality), 유효차원(rank)으로 결정된다.
+- Optimization: gradient descent는 국소 선형화, 2차 근사(Hessian) 위에서 움직이는 알고리즘이다.
+- Metric learning: cosine/L2/Mahalanobis 선택이 곧 귀납편향(inductive bias) 선택이다.
+- Transformer: Q/K/V projection, attention map, MLP projection은 연속된 선형변환 조합이다.
+- 3D Vision: triangulation, pose, epipolar 제약은 선형화 + SVD + 최소제곱으로 구현된다.
 
 ## 3. 핵심 개념
 
-### 3.1 System of Linear Equations
-- 핵심 아이디어: 여러 제약식을 동시에 만족하는 해를 찾는 문제 `Ax=b`.
-- 연구자 관점: 해의 존재/유일성은 rank 조건으로 판단하고, 과결정 시스템은 최소제곱으로 푼다.
-- 엔지니어 관점: 직접 역행렬보다 `torch.linalg.lstsq`, `solve`를 사용하고 conditioning을 항상 본다.
-- CV 예시: 카메라 보정/pose 추정에서 선형화된 방정식 시스템을 반복적으로 풂.
-- 논문 등장 포인트: PnP, bundle adjustment 초기화, normal equation `A^T A x = A^T b`.
+아래는 각 주제를 "직관 / 연구자 관점 / 엔지니어 관점 / CV 예시 / 논문에서의 등장"으로 정리한 실전 카드다.
+
+### 3.1 System of Linear Equations (`Ax=b`)
+- 직관: 제약 조건들의 교집합을 찾는 문제.
+- 연구자 관점: 해 존재성/유일성은 `rank(A)`와 `rank([A|b])`로 판정한다.
+- 엔지니어 관점: 역행렬을 직접 계산하지 말고 `solve/lstsq`를 사용한다.
+- CV 예시: PnP 초기화, 선형 삼각측량(triangulation), DLT.
+- 논문 등장: `A^T A x = A^T b` 형태의 normal equation.
 
 ### 3.2 Vector Spaces, Basis, Dimension
-- 핵심 아이디어: 데이터/특징이 놓이는 "가능한 방향의 집합"과 그 최소 생성 집합.
-- 연구자 관점: representation의 유효 차원(intrinsic dimension)과 subspace 구조를 분석한다.
-- 엔지니어 관점: feature dimension을 늘리는 것이 항상 정보량 증가를 뜻하지 않음을 염두에 둔다.
-- CV 예시: 얼굴 임베딩에서 실제 분별 정보는 전체 차원보다 훨씬 낮은 subspace에 집중.
-- 논문 등장 포인트: latent space disentanglement, intrinsic rank 분석, manifold 가정.
+- 직관: 데이터가 실제로 살아있는 방향의 집합.
+- 연구자 관점: "고차원 표현"보다 "유효 차원"이 일반화와 압축 가능성을 좌우한다.
+- 엔지니어 관점: 채널 수를 늘려도 실제 정보 차원이 늘지 않을 수 있다.
+- CV 예시: ViT feature가 클래스별로 몇 개의 주축에서 분리되는지 PCA로 확인.
+- 논문 등장: intrinsic dimension, subspace regularization, manifold 가정.
 
 ### 3.3 Linear Independence
-- 핵심 아이디어: 벡터들이 서로 중복 없이 새로운 정보를 제공하는가.
-- 연구자 관점: collapse 현상(표현 중복)을 독립성 저하로 해석하고 regularizer를 설계한다.
-- 엔지니어 관점: 배치 feature의 공분산/상관행렬로 중복도를 모니터링한다.
-- CV 예시: self-supervised learning에서 projector 출력이 한 방향으로 쏠리면 성능 급락.
-- 논문 등장 포인트: redundancy reduction, decorrelation loss, whitening objectives.
+- 직관: 벡터들이 서로 대체 불가능한 새 정보를 주는가.
+- 연구자 관점: collapse는 독립성 상실 문제로 해석 가능하다.
+- 엔지니어 관점: batch feature covariance의 off-diagonal가 커지면 중복 표현 가능성.
+- CV 예시: self-supervised pretraining에서 representation collapse 탐지.
+- 논문 등장: redundancy reduction (Barlow Twins 류), decorrelation loss.
 
 ### 3.4 Matrix Multiplication as Transformation
-- 핵심 아이디어: 행렬 곱은 "회전/스케일/shear/투영" 같은 선형 변환의 합성.
-- 연구자 관점: layer stack을 연속 선형 변환 + 비선형으로 보고 표현력과 안정성을 분석한다.
-- 엔지니어 관점: `W2(W1x)`는 연산자 합성이고, shape 추적이 수학 오류 예방의 1순위다.
-- CV 예시: 1x1 convolution은 채널 공간 선형 혼합, attention의 QK^T도 변환 합성.
-- 논문 등장 포인트: linear probe, projection head, token mixing matrix 해석.
+- 직관: 행렬 곱은 변환의 합성(회전/스케일/혼합/투영).
+- 연구자 관점: layer stack을 "연산자(operator)의 연쇄"로 본다.
+- 엔지니어 관점: shape/stride/layout이 의미를 결정한다 (`[B, N, D] @ [D, D]`).
+- CV 예시: 1x1 conv = 채널 공간 선형변환, attention의 Q/K/V projection.
+- 논문 등장: token mixing, projection head, linear probe.
 
 ### 3.5 Rank and Null Space
-- 핵심 아이디어: rank는 정보 차원, null space는 입력이 소거되는 방향.
-- 연구자 관점: 모델이 어떤 정보를 보존/폐기하는지 rank 스펙트럼으로 진단한다.
-- 엔지니어 관점: weight matrix의 effective rank를 추적해 과압축/붕괴를 잡는다.
-- CV 예시: 저조도 복원에서 복원 연산이 특정 주파수 성분을 null space로 보내 디테일 손실 유발.
-- 논문 등장 포인트: low-rank adapter, bottleneck 설계, spectral regularization.
+- 직관: rank는 보존된 정보 차원, null space는 소거된 방향.
+- 연구자 관점: 모델 병목이 정보 보존 실패인지(rank) 확인한다.
+- 엔지니어 관점: weight의 effective rank를 로그로 추적해 과압축을 조기 발견.
+- CV 예시: 저해상도 복원에서 high-frequency 성분이 null space로 빠져 디테일 손실.
+- 논문 등장: low-rank adaptation(LoRA), bottleneck design, spectral pruning.
 
 ### 3.6 Orthogonality and Projection
-- 핵심 아이디어: 직교는 정보 중복 최소화, projection은 관심 subspace로의 분해.
-- 연구자 관점: nuisance factor 제거를 projection으로 모델링한다.
-- 엔지니어 관점: Gram-Schmidt보다 `QR/SVD` 기반 구현을 선호해 수치 안정성 확보.
-- CV 예시: 배경/조명 성분을 orthogonal subspace로 분리해 식별 성능 개선.
-- 논문 등장 포인트: orthogonal constraint, projection head, subspace decomposition.
+- 직관: 직교는 정보 중복 최소화, 투영은 관심 성분 분리.
+- 연구자 관점: nuisance factor 제거를 projection으로 모델링.
+- 엔지니어 관점: 정규직교 제약은 학습 안정성과 gradient 분산 제어에 유리.
+- CV 예시: 배경/조명/identity 성분 분리.
+- 논문 등장: orthogonal regularization, subspace projection head.
 
 ### 3.7 Eigenvalues and Eigenvectors
-- 핵심 아이디어: 변환 후 방향은 유지되고 크기만 변하는 축.
-- 연구자 관점: 동역학/학습 안정성(수렴, exploding/vanishing)의 핵심 지표로 본다.
-- 엔지니어 관점: 스펙트럴 반경을 통해 반복 업데이트 안정 구간을 점검한다.
-- CV 예시: diffusion/graph-based vision에서 propagation 연산의 안정성 분석.
-- 논문 등장 포인트: spectral norm bounds, graph Laplacian eigen-spectrum.
+- 직관: 변환의 고정축과 증폭률.
+- 연구자 관점: 동역학 안정성(수렴/발산), 표현 방향성의 핵심 지표.
+- 엔지니어 관점: 반복 업데이트 연산의 spectral radius를 점검.
+- CV 예시: diffusion/graph message passing 안정성 분석.
+- 논문 등장: spectral norm constraint, Laplacian eigen analysis.
 
 ### 3.8 Diagonalization
-- 핵심 아이디어: 복잡한 선형변환을 고유기저에서 축별 독립 스케일링으로 단순화.
-- 연구자 관점: 연산 해석/복잡도 감소/이론 분석에 유리한 좌표계를 찾는 문제.
-- 엔지니어 관점: 완전 대각화 불가한 경우가 많아 SVD/Schur로 우회한다.
-- CV 예시: 공분산 구조를 대각화해 decorrelation/whitening 수행.
-- 논문 등장 포인트: second-order method 근사, preconditioning 분석.
+- 직관: 연산자를 "축별 독립 스케일링"으로 분해해 해석.
+- 연구자 관점: 해석 가능성/계산 단순화/근사해 도출에 유리.
+- 엔지니어 관점: 일반행렬은 대각화 불가할 수 있으니 Schur/SVD 우회가 실전적.
+- CV 예시: 공분산 대각화 기반 whitening.
+- 논문 등장: second-order 근사, preconditioning 해석.
 
 ### 3.9 SVD
-- 핵심 아이디어: 임의 행렬을 회전-스케일-회전(`UΣV^T`)으로 분해.
-- 연구자 관점: low-rank 구조, 노이즈 분리, 표현 차원 축약의 표준 도구.
-- 엔지니어 관점: `torch.linalg.svd`는 비싸므로 randomized/truncated SVD를 고려.
-- CV 예시: LoRA, 압축, 배경/객체 분리, fundamental matrix 추정.
-- 논문 등장 포인트: low-rank adaptation, nuclear norm, robust PCA류 방법.
+- 직관: 임의 행렬을 입력 회전-스케일-출력 회전으로 분해.
+- 연구자 관점: 저랭크 구조, 노이즈 분리, 정보축 해석의 표준.
+- 엔지니어 관점: full SVD는 비싸므로 truncated/randomized 접근 검토.
+- CV 예시: LoRA, low-rank attention, 3D geometric fitting.
+- 논문 등장: nuclear norm, low-rank regularization, robust decomposition.
 
-### 3.10 Positive Definite Matrices
-- 핵심 아이디어: `x^T A x > 0`를 만족하는 곡면; 에너지/분산/곡률을 정의.
-- 연구자 관점: 공분산, metric tensor, Hessian 근사에서 SPD 구조를 활용한다.
-- 엔지니어 관점: Cholesky 분해 가능 여부로 수치적 건강 상태를 빠르게 확인.
-- CV 예시: Mahalanobis metric learning에서 SPD 행렬이 클래스 분별 거리 정의.
-- 논문 등장 포인트: Gaussian modeling, covariance pooling, Riemannian optimization.
+### 3.10 Positive Definite Matrices (SPD/PD)
+- 직관: 모든 방향에서 에너지가 양수인 안정적 곡면.
+- 연구자 관점: covariance/metric/Hessian 근사의 기본 구조.
+- 엔지니어 관점: SPD 보장을 위해 `A = L L^T + eps I` 파라미터화 사용.
+- CV 예시: Mahalanobis metric learning, covariance pooling.
+- 논문 등장: Gaussian modeling, Riemannian learning on SPD manifold.
 
-### 3.11 Quadratic Forms
-- 핵심 아이디어: `x^T A x`는 방향별 에너지/패널티를 측정하는 함수.
-- 연구자 관점: regularization을 단순 L2에서 방향가중 penalty로 확장한다.
-- 엔지니어 관점: loss 항을 quadratic으로 보면 gradient/Hessian 구조를 예측 가능.
-- CV 예시: optical flow smoothness, graph regularization.
-- 논문 등장 포인트: Tikhonov regularization, energy minimization framework.
+### 3.11 Quadratic Forms (`x^T A x`)
+- 직관: 방향별 패널티/에너지 측정.
+- 연구자 관점: regularizer를 방향 선택적으로 설계 가능.
+- 엔지니어 관점: 손실항을 quadratic으로 보면 조건수/학습률 선택 근거가 생긴다.
+- CV 예시: optical flow smoothness, graph Laplacian regularization.
+- 논문 등장: Tikhonov regularization, energy minimization.
 
 ### 3.12 Norms and Distances
-- 핵심 아이디어: 크기(norm)와 유사도(distance)가 representation의 학습 목표를 규정.
-- 연구자 관점: L2, cosine, Mahalanobis 선택은 귀납 편향 그 자체다.
-- 엔지니어 관점: feature normalize 여부가 metric learning 성능에 직접 영향.
-- CV 예시: face recognition에서 cosine margin loss.
-- 논문 등장 포인트: contrastive/triplet/arcface 계열 손실 설계.
+- 직관: "가깝다/멀다"의 정의가 학습 목표를 바꾼다.
+- 연구자 관점: metric 선택이 representation geometry를 결정한다.
+- 엔지니어 관점: normalize 위치(pre/post projection)가 성능에 큰 영향.
+- CV 예시: Face recognition에서 cosine margin, re-ID에서 triplet distance.
+- 논문 등장: contrastive, triplet, ArcFace, proxy-based losses.
 
 ### 3.13 Matrix Factorization
-- 핵심 아이디어: 복잡한 행렬을 의미 있는 작은 요인들로 분해.
-- 연구자 관점: "무엇이 데이터 생성요인인가"를 factor로 해석한다.
-- 엔지니어 관점: 파라미터 절감, 계산량 축소, 모듈화에 바로 적용.
-- CV 예시: attention/kernel의 low-rank factorization으로 모바일 추론 가속.
-- 논문 등장 포인트: CP/Tucker, low-rank conv, adapter decomposition.
+- 직관: 복잡한 연산을 작은 의미 단위로 분해.
+- 연구자 관점: 생성요인(disentangled factor)을 해석하거나 제약한다.
+- 엔지니어 관점: 파라미터/연산량 감소와 배포 효율성 향상.
+- CV 예시: convolution kernel factorization (k x k -> k x 1 + 1 x k).
+- 논문 등장: CP/Tucker decomposition, low-rank adapters.
 
 ### 3.14 Matrix Calculus Basics
-- 핵심 아이디어: 벡터/행렬 변수에 대한 미분 규칙.
-- 연구자 관점: 손실 설계를 gradient flow 관점에서 읽고 안정성 조건을 점검.
-- 엔지니어 관점: autograd를 믿되, 차원과 transpose 규칙을 수동 검증한다.
-- CV 예시: custom loss 구현 시 broadcasting 실수로 잘못된 gradient가 전파되는 문제.
-- 논문 등장 포인트: 부록의 gradient 유도식, closed-form update.
+- 직관: 벡터/행렬 변수에 대한 미분 문법.
+- 연구자 관점: 논문의 gradient 유도는 설계 가정(대칭성, 정규화)을 드러낸다.
+- 엔지니어 관점: autograd 결과를 shape와 transpose 규칙으로 sanity check.
+- CV 예시: custom loss 구현에서 broadcasting 오류로 gradient 왜곡.
+- 논문 등장: supplementary의 미분 유도식, closed-form updates.
 
 ### 3.15 Jacobian / Hessian Intuition
-- 핵심 아이디어: Jacobian은 국소 선형화, Hessian은 곡률/조건수 정보.
-- 연구자 관점: representation 민감도, sharpness, generalization 관계를 본다.
-- 엔지니어 관점: Hessian full 계산 대신 trace, top-eigen, Fisher 근사를 사용.
-- CV 예시: adversarial robustness에서 입력 Jacobian norm 제어.
-- 논문 등장 포인트: sharpness-aware training, second-order approximation.
+- 직관: Jacobian=민감도 지도, Hessian=곡률 지도.
+- 연구자 관점: sharp/flat minima, robustness, generalization 연결.
+- 엔지니어 관점: full Hessian 대신 HVP, top-eigen, trace 근사를 쓴다.
+- CV 예시: 입력 Jacobian norm 제어로 adversarial robustness 개선.
+- 논문 등장: SAM, curvature regularization, second-order optimizer 분석.
 
 ### 3.16 PCA and Low-rank Approximation
-- 핵심 아이디어: 분산이 큰 축을 남기고 작은 축을 버려 정보 압축.
-- 연구자 관점: 데이터 통계 구조를 분석해 inductive bias를 찾는다.
-- 엔지니어 관점: feature 시각화/노이즈 제거/메모리 절감 파이프라인에 즉시 적용.
-- CV 예시: ViT feature PCA 시각화로 클래스 분리 정도 확인.
-- 논문 등장 포인트: self-supervised feature 분석, compression/pruning 사전분석.
+- 직관: 중요한 축만 남겨 노이즈/중복을 제거.
+- 연구자 관점: representation의 통계 구조를 요약해 모델 개선 포인트를 찾는다.
+- 엔지니어 관점: 차원 축소로 시각화/캐싱/검색 속도 개선.
+- CV 예시: embedding retrieval에서 PCA whitening 전후 recall 비교.
+- 논문 등장: feature analysis, model compression pre-analysis.
 
 ### 3.17 Optimization and Gradient-based Learning Connection
-- 핵심 아이디어: 학습은 고차원 함수 위에서 선형근사(1차/2차)를 반복하는 과정.
-- 연구자 관점: preconditioner, curvature, spectral bias가 최적화 경로를 결정.
-- 엔지니어 관점: learning rate, weight decay, normalization은 선형대수적 스케일 제어 장치.
-- CV 예시: 배치 크기/학습률 스케일링 실패 시 loss surface의 ill-conditioning이 노출.
-- 논문 등장 포인트: Adam/SGD 해석, natural gradient, K-FAC류 근사.
+- 직관: 학습은 1차(gradient)와 2차(곡률) 정보를 번갈아 쓰는 근사 반복.
+- 연구자 관점: conditioning, preconditioning, spectrum이 수렴 속도/해 품질을 좌우.
+- 엔지니어 관점: LR, WD, normalization은 모두 선형대수적 스케일 조정.
+- CV 예시: 대규모 배치에서 warmup 없이 divergence 발생 -> 스펙트럼 스케일 미스매치.
+- 논문 등장: AdamW 해석, natural gradient 근사, K-FAC 계열.
 
 ## 4. 수식 직관
-- 선형 시스템: `Ax=b`는 "A가 만든 공간 위에서 b를 맞출 수 있나?"의 문제다.
-- 투영: `P = A(A^T A)^{-1}A^T`는 벡터를 `col(A)`로 떨어뜨리는 연산.
-- 고유분해: `Av = λv`는 변환의 고정 방향과 증폭률.
-- SVD: `A = UΣV^T`는 입력/출력 기저를 분리해 정보량(`Σ`)을 노출.
-- 양정정부호: `x^T A x > 0`이면 에너지 해석 가능, 최적화에서 안정적.
-- Jacobian: `J = ∂f/∂x`는 작은 변화가 출력에서 어떻게 증폭되는지 보여준다.
-- Hessian: `H = ∂^2L/∂θ^2`는 곡률; 큰 고유값은 가파른 방향, 작은 값은 평평한 방향.
+
+### 4.1 세 줄 요약 수식
+- 선형 시스템: `x* = argmin_x ||Ax-b||_2^2 = (A^T A)^{-1}A^T b` (full rank 가정)
+- 투영: `P = A(A^T A)^{-1}A^T`, `x_proj = Px`, `r = x - Px`는 `col(A)`에 직교
+- SVD: `A = UΣV^T`, `rank-k` 근사: `A_k = U_k Σ_k V_k^T`
+
+### 4.2 왜 이 수식이 중요한가
+- `A^T A`가 ill-conditioned면 작은 노이즈도 해를 크게 흔든다.
+- 투영/직교 분해는 "신호 vs nuisance" 분리를 코드 수준에서 가능하게 한다.
+- SVD 절단(truncation)은 압축/가속/일반화 사이의 trade-off를 조절한다.
+
+### 4.3 Jacobian/Hessian 직관 수식
+- Jacobian: `J_f(x) = ∂f/∂x` (입력의 미소 변화가 출력으로 어떻게 전달되는지)
+- Hessian: `H_L(θ) = ∂^2 L / ∂θ^2` (손실 지형의 국소 곡률)
+- 2차 근사: `L(θ+Δ) ≈ L(θ) + g^TΔ + 1/2 Δ^T H Δ`
 
 ## 5. 딥러닝/컴퓨터비전 연결
-- CNN: convolution도 로컬 선형연산이며 BN/ReLU와 결합해 비선형 표현력 확보.
-- Metric learning: distance choice가 곧 embedding geometry.
-- Transformer: Q/K/V projection은 선형변환, attention map은 Gram 구조와 밀접.
-- 3D vision: epipolar/pose/triangulation은 선형화 + 최소제곱 + SVD 반복.
-- Representation learning: collapse 방지는 rank/orthogonality/covariance 제어 문제.
+
+### CNN
+- Conv는 선형연산 + 비선형의 반복이며, 채널 혼합은 사실상 행렬곱이다.
+- 1x1 conv는 feature basis를 재정의하는 projection 연산으로 볼 수 있다.
+
+### Representation Learning
+- 좋은 representation은 class 신호는 유지(rank 유지), nuisance는 줄이는(projection) 구조를 갖는다.
+- collapse 탐지는 covariance eigen-spectrum으로 빠르게 가능하다.
+
+### Optimization
+- 학습 실패를 "optimizer 이슈"로만 보지 말고 condition number 문제로 재해석해야 한다.
+- normalization(BN/LN)은 사실상 스케일 정렬(preconditioning)에 가깝다.
+
+### Metric Learning
+- cosine vs L2 vs Mahalanobis는 embedding 공간의 기하학을 다르게 강제한다.
+- 임베딩 정규화는 각도 정보 중심 학습을 유도한다.
+
+### Transformer
+- attention score `QK^T / sqrt(d)`는 Gram-like 연산이며, 분산 스케일링이 핵심.
+- low-rank attention 근사는 메모리/연산량 병목 해결의 표준 패턴이다.
+
+### 3D Vision
+- Essential/Fundamental matrix 추정은 SVD 제약(`rank=2`)이 중요하다.
+- BA는 반복적인 선형화와 Jacobian 블록 구조 활용 문제다.
 
 ## 6. 자주 헷갈리는 포인트
-- rank가 크면 항상 좋은가: 아니다. task-relevant signal 대비 noise rank도 함께 증가할 수 있다.
-- 역행렬을 항상 구해야 하나: 아니다. 대부분 solve/lstsq가 더 안정적이다.
-- 고유분해와 SVD는 같은가: 대칭행렬에서는 연결되지만 일반행렬에서는 다르다.
-- Jacobian/Hessian은 너무 비싸서 무쓸모인가: full 계산은 비싸지만 근사 통계는 매우 유용하다.
-- PCA 성능 저하 = 나쁜 방법인가: 목적이 압축/시각화/노이즈 제거라면 유효하다.
+- "역행렬 쓰면 깔끔"은 착각이다: 수치 안정성은 `solve/lstsq/cholesky`가 훨씬 낫다.
+- "차원 크면 표현력 좋다"는 반만 맞다: 유효 차원과 잡음 차원을 구분해야 한다.
+- "SVD = 고유분해"는 오해다: 대칭행렬 특수 케이스에서만 유사하다.
+- "Hessian은 못 구하니 의미 없다"는 오해다: HVP/근사 고유값만으로도 유익하다.
+- "PCA는 구식"이 아니다: 해석/압축/전처리에서 여전히 강력한 baseline이다.
 
 ## 7. 작은 예제 또는 numpy/pytorch 실험 아이디어
+
+### 7.1 Effective rank 모니터링
 ```python
-# 1) Effective rank 추적
 import torch
-W = torch.randn(512, 512)
+
+W = torch.randn(1024, 512)
 s = torch.linalg.svdvals(W)
-effective_rank = torch.exp(-(s/s.sum()) * torch.log((s/s.sum()) + 1e-12)).sum()
+p = s / (s.sum() + 1e-12)
+effective_rank = torch.exp(-(p * torch.log(p + 1e-12)).sum())
 print("effective rank:", float(effective_rank))
+```
 
-# 2) Projection 실험
-A = torch.randn(128, 16)
+### 7.2 Projection으로 nuisance 제거
+```python
+import torch
+
+# nuisance basis (예: 조명 방향)라고 가정
+A = torch.randn(256, 8)
 P = A @ torch.linalg.inv(A.T @ A) @ A.T
-x = torch.randn(128)
-x_proj = P @ x
-print("projection residual norm:", float(torch.norm(x - x_proj)))
+I = torch.eye(256)
+P_perp = I - P
 
-# 3) Jacobian norm (입력 민감도) 측정
-model = torch.nn.Sequential(torch.nn.Linear(32, 64), torch.nn.ReLU(), torch.nn.Linear(64, 10))
-inp = torch.randn(1, 32, requires_grad=True)
-out = model(inp).sum()
-out.backward()
-print("||dout/dx||:", float(inp.grad.norm()))
+x = torch.randn(256)
+x_clean = P_perp @ x
+print("removed energy:", float(torch.norm(P @ x)))
+```
+
+### 7.3 Hessian-vector product (HVP) 장난감 실험
+```python
+import torch
+
+model = torch.nn.Sequential(
+    torch.nn.Linear(32, 64),
+    torch.nn.ReLU(),
+    torch.nn.Linear(64, 10)
+)
+x = torch.randn(16, 32)
+y = torch.randint(0, 10, (16,))
+loss_fn = torch.nn.CrossEntropyLoss()
+
+loss = loss_fn(model(x), y)
+params = [p for p in model.parameters() if p.requires_grad]
+g = torch.autograd.grad(loss, params, create_graph=True)
+v = [torch.randn_like(p) for p in params]
+gv = sum((gi * vi).sum() for gi, vi in zip(g, v))
+hvp = torch.autograd.grad(gv, params)
+print("hvp norms:", [float(t.norm()) for t in hvp])
 ```
 
 ## 8. 논문 읽기 연결 포인트
-- "spectral", "orthogonal", "rank", "subspace", "conditioning", "curvature" 키워드가 나오면 선형대수 핵심 구간이다.
-- Method 섹션에서 projection/factorization을 쓰면 보통 학습 안정성 또는 계산 효율이 목적이다.
-- Appendix의 gradient 유도식은 구현에서 shape mismatch를 예방하는 체크리스트로 사용한다.
-- 3D vision 논문에서 SVD/eigendecomposition은 종종 "해의 기하학적 제약"을 만족시키는 도구다.
+- `spectral`, `subspace`, `orthogonal`, `low-rank`, `conditioning`, `curvature`는 핵심 수학 신호어다.
+- 방법론에서 projection/factorization이 나오면 목적은 대개 둘 중 하나다: 안정화 또는 효율화.
+- 부록의 미분식은 구현에서 가장 좋은 unit test 힌트다.
+- 3D 비전 논문에서 SVD/eigen은 "제약을 만족하는 해 구성"에 자주 쓰인다.
+- 아키텍처 논문에서 행렬 형태를 먼저 정리하면 실험 실패 원인을 빠르게 좁힐 수 있다.
 
 ## 9. GitHub에 같이 링크할 후속 문서
-권장 분할 구조:
-- `linear-algebra/fundamentals.md`: 전체 개념 지도 + CV 연결
-- `linear-algebra/eigens-and-svd.md`: 고유분해/SVD 심화, low-rank 설계 패턴
-- `linear-algebra/matrix-calculus.md`: matrix calculus, Jacobian/Hessian, autograd 검증 패턴
-- `linear-algebra/optimization-geometry.md`: conditioning, preconditioning, curvature 기반 학습 안정화
-- `linear-algebra/metric-and-representation.md`: norm/distance, metric learning, representation geometry
-- `linear-algebra/vision-geometry.md`: 3D vision과 선형대수(카메라/pose/triangulation)
+이 문서는 허브 문서다. 아래 문서로 분할해 심화한다.
+
+- `linear-algebra/fundamentals.md`
+  - 개념 전체 지도
+  - 실험 quick-start
+- `linear-algebra/eigens-and-svd.md`
+  - 고유값/특이값 스펙트럼 해석
+  - low-rank 설계 패턴과 구현
+- `linear-algebra/matrix-calculus.md`
+  - matrix calculus 규칙
+  - Jacobian/Hessian 실전 계산
+- `linear-algebra/optimization-geometry.md`
+  - condition number, preconditioning, sharpness
+- `linear-algebra/metric-and-representation.md`
+  - 거리, 정규화, 임베딩 기하
+- `linear-algebra/vision-geometry.md`
+  - epipolar/pose/triangulation, BA 선형화
 
 ## 10. 핵심 질문 5개
-1. 지금 모델의 feature 공간은 어떤 subspace를 학습하고 있고, 불필요한 null space는 무엇인가?
-2. 성능 병목이 표현력 부족(rank 부족)인지, 최적화 불안정(conditioning 문제)인지 어떻게 구분할 것인가?
-3. 내가 쓰는 거리 함수(L2/cosine/Mahalanobis)는 task의 의미론과 맞는가?
-4. Jacobian/Hessian 근사 통계를 보면 현재 학습률/정규화 설정이 타당한가?
-5. 이 논문의 핵심 기여를 선형변환/분해/투영 관점으로 재해석하면 무엇이 남는가?
+1. 현재 모델의 성능 병목은 표현력 부족(rank)인가, 최적화 불안정(conditioning)인가?
+2. 내가 택한 metric(L2/cosine/Mahalanobis)은 task semantics와 진짜로 정합적인가?
+3. feature 공간에서 어떤 방향이 signal이고 어떤 방향이 nuisance인지 투영 관점으로 설명 가능한가?
+4. 학습률/정규화/초기화 설정이 Jacobian/Hessian 관점에서 어떤 스케일을 강제하는가?
+5. 이 논문의 기여를 "선형변환 + 제약 + 분해"로 환원하면 본질이 무엇인가?

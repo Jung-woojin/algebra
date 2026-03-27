@@ -1,310 +1,418 @@
-# Essential Linear Algebra Formulas
+# 선형대수학 필수 공식
 
-A comprehensive collection of must-know linear algebra formulas for mathematics, physics, engineering, and data science applications.
-
----
-
-## 1. Matrix Operations
-
-### Basic Operations
-
-**Matrix Addition/Subtraction:**
-$$ (A + B)_{ij} = A_{ij} + B_{ij} $$
-
-**Matrix Multiplication:**
-$$ (AB)_{ij} = \sum_{k=1}^n A_{ik}B_{kj} $$
-
-**Transpose:**
-$$ (A^T)_{ij} = A_{ji} $$
-Properties: $(A^T)^T = A$, $(A+B)^T = A^T + B^T$, $(AB)^T = B^T A^T$
-
-**Inverse:**
-$$ A^{-1}A = AA^{-1} = I $$
-Properties: $(A^{-1})^{-1} = A$, $(AB)^{-1} = B^{-1}A^{-1}$, $(A^T)^{-1} = (A^{-1})^T$
+수학, 물리학, 공학, 데이터 과학에 필요한 선형대수학 핵심 공식들을 정리한 자료입니다.
 
 ---
 
-## 2. Determinants
+## 1. 행렬 연산
 
-**2×2 Matrix:**
-$$ \det\begin{pmatrix} a & b \\ c & d \end{pmatrix} = ad - bc $$
+### 기본 연산
 
-**3×3 Matrix (Sarrus' Rule):**
-$$ \det\begin{pmatrix} a & b & c \\ d & e & f \\ g & h & i \end{pmatrix} = aei + bfg + cdh - ceg - bdi - afh $$
+**행렬 덧셈/뺄셈:**
+두 행렬 A, B의 같은 위치 원소끼리 더하거나 뺍니다.
 
-**Properties:**
-- $\det(A^T) = \det(A)$
-- $\det(AB) = \det(A)\det(B)$
-- $\det(A^{-1}) = \frac{1}{\det(A)}$
-- $\det(cA) = c^n\det(A)$ for n×n matrix
+**(A + B)ᵢⱼ = Aᵢⱼ + Bᵢⱼ**
 
-**Cofactor Expansion:**
-$$ \det(A) = \sum_{j=1}^n (-1)^{i+j}A_{ij}\det(M_{ij}) $$
-where $M_{ij}$ is the minor matrix.
+**행렬 곱셈:**
+행렬 A (m×n) 와 B (n×p) 의 곱:
+**(AB)ᵢⱼ = Σₖ₌₁ⁿ AᵢₖBₖⱼ**
 
-**Cramer's Rule:**
-For $Ax = b$:
-$$ x_i = \frac{\det(A_i)}{\det(A)} $$
-where $A_i$ is A with column i replaced by b.
+**행렬 전치 (Transpose):**
+행렬 A 의 행과 열을 바꿉니다.
+**Aᵀ**의 (i, j) 원소는 **A**의 (j, i) 원소
 
----
+전치 성질:
+- **(Aᵀ)ᵀ = A**
+- **(A + B)ᵀ = Aᵀ + Bᵀ**
+- **(AB)ᵀ = BᵀAᵀ**
 
-## 3. Vector Operations
+**행렬 역행렬 (Inverse):**
+정방행렬 A 의 역행렬 A⁻¹은:
+**A⁻¹A = AA⁻¹ = I** (단위행렬)
 
-### Inner Products
-
-**Dot Product:**
-$$ \mathbf{a} \cdot \mathbf{b} = \sum_{i=1}^n a_i b_i = \|\mathbf{a}\|\|\mathbf{b}\|\cos\theta $$
-
-**Cross Product (3D only):**
-$$ \mathbf{a} \times \mathbf{b} = \begin{vmatrix} \mathbf{i} & \mathbf{j} & \mathbf{k} \\ a_1 & a_2 & a_3 \\ b_1 & b_2 & b_3 \end{vmatrix} = (a_2b_3 - a_3b_2, a_3b_1 - a_1b_3, a_1b_2 - a_2b_1) $$
-
-### Vector Spaces
-
-**Norms:**
-- L1 norm: $\|\mathbf{x}\|_1 = \sum |x_i|$
-- L2 norm (Euclidean): $\|\mathbf{x}\|_2 = \sqrt{\sum x_i^2}$
-- L∞ norm: $\|\mathbf{x}\|_\infty = \max_i |x_i|$
-
-**Distance:**
-$$ d(\mathbf{x}, \mathbf{y}) = \|\mathbf{x} - \mathbf{y}\|_2 = \sqrt{\sum (x_i - y_i)^2} $$
-
-**Projection of u onto v:**
-$$ \text{proj}_{\mathbf{v}}\mathbf{u} = \frac{\mathbf{u} \cdot \mathbf{v}}{\|\mathbf{v}\|^2}\mathbf{v} $$
+역행렬 성질:
+- **(A⁻¹)⁻¹ = A**
+- **(AB)⁻¹ = B⁻¹A⁻¹**
+- **(Aᵀ)⁻¹ = (A⁻¹)ᵀ**
 
 ---
 
-## 4. Eigenvalues and Eigenvectors
+## 2. 행렬식 (Determinants)
 
-**Definition:**
-$$ A\mathbf{v} = \lambda\mathbf{v} $$
-where $\lambda$ is eigenvalue, $\mathbf{v}$ is eigenvector (non-zero).
+**2×2 행렬식:**
+| a  b |
+| c  d | = ad - bc
 
-**Characteristic Equation:**
-$$ \det(A - \lambda I) = 0 $$
+**3×3 행렬식 (사루스 규칙):**
+| a  b  c |
+| d  e  f |
+| g  h  i |
 
-**Properties:**
-- Sum of eigenvalues = trace(A)
-- Product of eigenvalues = det(A)
-- Real symmetric matrices have real eigenvalues
-- Orthogonal eigenvectors for distinct eigenvalues (symmetric A)
+= aei + bfg + cdh - ceg - bdi - afh
 
-**Diagonalization:**
-$$ A = PDP^{-1} $$
-where P has eigenvectors as columns, D is diagonal with eigenvalues.
+**행렬식 성질:**
+- **det(Aᵀ) = det(A)**
+- **det(AB) = det(A)det(B)**
+- **det(A⁻¹) = 1/det(A)**
+- **det(cA) = cⁿdet(A)** (n×n 행렬의 경우)
 
----
+**여인수 전개 (Cofactor Expansion):**
+행 i 에 대한 전개:
+**det(A) = Σⱼ₌₁ⁿ (-1)ⁱ⁺ʲAᵢⱼdet(Mᵢⱼ)**
 
-## 5. Decompositions
+여기서 **Mᵢⱼ**는 i 행 j 열을 뺀 소행렬식입니다.
 
-### LU Decomposition
-$$ A = LU $$
-where L is lower triangular, U is upper triangular. Used for solving linear systems.
+**크라메르 규칙 (Cramer's Rule):**
+Ax = b 체계의 해:
+**xᵢ = det(Aᵢ) / det(A)**
 
-### QR Decomposition
-$$ A = QR $$
-where Q is orthogonal ($Q^TQ = I$), R is upper triangular. Used for least squares.
-
-### Cholesky Decomposition (for symmetric positive-definite matrices)
-$$ A = LL^T $$
-where L is lower triangular.
-
-### Singular Value Decomposition (SVD)
-$$ A = U\Sigma V^T $$
-- U: m×m orthogonal matrix (left singular vectors)
-- Σ: m×n diagonal matrix with singular values σ₁ ≥ σ₂ ≥ ... ≥ 0
-- V: n×n orthogonal matrix (right singular vectors)
-
-**Singular values relate to eigenvalues:**
-$$ \sigma_i = \sqrt{\lambda_i(A^TA)} $$
-
-### Spectral Decomposition (for symmetric matrices)
-$$ A = Q\Lambda Q^T $$
-where Q contains orthonormal eigenvectors, Λ is diagonal eigenvalue matrix.
+여기서 **Aᵢ**는 A의 i 번째 열을 b 로 바꾼 행렬입니다.
 
 ---
 
-## 6. Linear Systems
+## 3. 벡터 연산
 
-**Gaussian Elimination:**
-Transform augmented matrix [A|b] to row echelon form.
+### 내적 (Inner Products)
 
-**Back Substitution:**
-For upper triangular system Ux = y, solve from bottom up.
+**내적 (Dot Product):**
+**a · b = Σᵢ₌₁ⁿ aᵢbᵢ = ||a|| ||b|| cos θ**
 
-**Least Squares Solution:**
-Minimize $\|Ax - b\|^2$:
-$$ A^TAx = A^Tb $$
-$$ x = (A^TA)^{-1}A^Tb = A^\dagger b $$
-where $A^\dagger = (A^TA)^{-1}A^T$ is the pseudoinverse for full column rank.
+여기서 θ 는 두 벡터 사이의 각도입니다.
 
-**Normal Equations:**
-The equations $A^TAx = A^Tb$ derived from setting gradient to zero.
+**외적 (Cross Product - 3 차원만):**
+**a × b = (a₂b₃ - a₃b₂, a₃b₁ - a₁b₃, a₁b₂ - a₂b₁)**
 
----
+또는 행렬식으로:
+| i   j   k   |
+| a₁  a₂  a₃  |
+| b₁  b₂  b₃  |
 
-## 7. Vector Calculus
+### 벡터 공간
 
-### Gradient
-$$ \nabla f = \begin{bmatrix} \frac{\partial f}{\partial x_1} \\ \frac{\partial f}{\partial x_2} \\ \vdots \\ \frac{\partial f}{\partial x_n} \end{bmatrix} $$
+**벡터 노름 (Norms):**
+- L1 노름: **||x||₁ = Σ |xᵢ|** (맨해튼 거리)
+- L2 노름 (유클리드): **||x||₂ = √(Σ xᵢ²)** (일반적인 거리)
+- L∞ 노름: **||x||∞ = maxᵢ |xᵢ|** (최대절대값)
 
-### Jacobian Matrix
-For f: ℝⁿ → ℝᵐ:
-$$ J = \begin{bmatrix} \frac{\partial f_1}{\partial x_1} & \cdots & \frac{\partial f_1}{\partial x_n} \\ \vdots & \ddots & \vdots \\ \frac{\partial f_m}{\partial x_1} & \cdots & \frac{\partial f_m}{\partial x_n} \end{bmatrix} $$
+**벡터 거리:**
+**d(x, y) = ||x - y||₂ = √(Σ (xᵢ - yᵢ)²)**
 
-### Divergence
-$$ \nabla \cdot \mathbf{F} = \frac{\partial F_1}{\partial x_1} + \frac{\partial F_2}{\partial x_2} + \frac{\partial F_3}{\partial x_3} $$
-
-### Curl (3D)
-$$ \nabla \times \mathbf{F} = \begin{vmatrix} \mathbf{i} & \mathbf{j} & \mathbf{k} \\ \frac{\partial}{\partial x} & \frac{\partial}{\partial y} & \frac{\partial}{\partial z} \\ F_1 & F_2 & F_3 \end{vmatrix} $$
-
-### Hessian Matrix (2nd derivatives)
-$$ H_f = \begin{bmatrix} \frac{\partial^2 f}{\partial x_1^2} & \frac{\partial^2 f}{\partial x_1 \partial x_2} & \cdots \\ \frac{\partial^2 f}{\partial x_2 \partial x_1} & \frac{\partial^2 f}{\partial x_2^2} & \cdots \\ \vdots & \vdots & \ddots \end{bmatrix} $$
+**투영 (Projection):**
+벡터 u 를 벡터 v 에 투영:
+**projᵥ u = (u·v / ||v||²) v**
 
 ---
 
-## 8. Subspaces and Bases
+## 4. 고유값과 고유벡터
 
-### Fundamental Subspaces
-- **Column space (Range):** Col(A) = {Ax : x ∈ ℝⁿ}
-- **Null space (Kernel):** Null(A) = {x : Ax = 0}
-- **Row space:** Row(A) = Col(A^T)
-- **Left null space:** Null(A^T)
+**정의:**
+정방행렬 A 와 0 이 아닌 벡터 v 에 대해:
+**Av = λv**
 
-**Dimension Theorem (Rank-Nullity):**
-$$ \text{rank}(A) + \text{nullity}(A) = n $$
+여기서 **λ (스칼라)**는 고유값, **v**는 고유벡터입니다.
 
-### Basis Properties
-- Linearly independent spanning set
-- All bases of same subspace have same cardinality
-- Change of basis matrix P: $[x]_B = P[x]_C$
+**특성방정식 (Characteristic Equation):**
+**det(A - λI) = 0**
 
----
+이 방정식을 풀어 고유값 λ 를 구합니다.
 
-## 9. Orthogonality
+**주요 성질:**
+- 모든 고유값의 합 = 행렬의 대각합 (trace)
+- 모든 고유값의 곱 = 행렬식 (det)
+- 대칭행렬은 모든 고유값이 실수
+- 서로 다른 고유값에 대응하는 고유벡터는 직교
 
-### Orthogonal Matrix
-$$ Q^TQ = QQ^T = I $$
-- Columns form orthonormal basis
-- Preserves lengths: $\|Qx\| = \|x\|$
-- Preserves dot products: $(Qx) \cdot (Qy) = x \cdot y$
-- $\det(Q) = \pm 1$
+**대각화 (Diagonalization):**
+행렬 A 를 대각행렬 D 로 대각화:
+**A = PDP⁻¹**
 
-### Orthonormal Basis
-- Vectors are orthogonal and unit length
-- Gram matrix: $Q^TQ = I$
-- Coordinate transformation: $P_{xy} = Q^T x$
-
-### Gram-Schmidt Process
-Given basis {v₁, v₂, ..., vₙ}:
-$$ u_1 = v_1 $$
-$$ u_k = v_k - \sum_{j=1}^{k-1} \frac{v_k \cdot u_j}{\|u_j\|^2}u_j $$
-$$ e_k = \frac{u_k}{\|u_k\|} $$
+여기서 **P**의 열은 고유벡터, **D**는 대각에 고유값을 둔 대각행렬입니다.
 
 ---
 
-## 10. Special Matrix Types
+## 5. 행렬 분해 (Decompositions)
 
-### Symmetric Matrix
-$$ A = A^T $$
-- All eigenvalues are real
-- Orthogonally diagonalizable
+### LU 분해
+**A = LU**
 
-### Skew-Symmetric Matrix
-$$ A = -A^T $$
-- Diagonal elements are 0
-- Eigenvalues are purely imaginary or zero
+- **L**: 하삼각행렬 (Lower triangular)
+- **U**: 상삼각행렬 (Upper triangular)
+- 사용: 연립방정식 해결
 
-### Orthogonal Matrix
-$$ A^TA = I $$
-- Columns are orthonormal
-- Inverse equals transpose
+### QR 분해
+**A = QR**
 
-### Projection Matrix
-$$ P = P^2 = P^T $$
-Projection onto column space of A:
-$$ P = A(A^TA)^{-1}A^T $$
+- **Q**: 직교행렬 (QᵀQ = I)
+- **R**: 상삼각행렬
+- 사용: 최소제곱법 (least squares)
 
-### Rotation Matrix (2D)
-$$ R(\theta) = \begin{bmatrix} \cos\theta & -\sin\theta \\ \sin\theta & \cos\theta \end{bmatrix} $$
+### 코시 분해 (Cholesky)
+대칭 양정치행렬에 대한 분해:
+**A = LLᵀ**
 
-### Rotation Matrix (3D - about axis)
-$$ R_x(\theta) = \begin{bmatrix} 1 & 0 & 0 \\ 0 & \cos\theta & -\sin\theta \\ 0 & \sin\theta & \cos\theta \end{bmatrix} $$
-(And similarly for y and z axes)
+여기서 **L**은 하삼각행렬입니다. 계산 효율성이 높아 널리 쓰입니다.
 
----
+### 특이값 분해 (SVD - Singular Value Decomposition)
+모든 행렬 A 에 대해:
+**A = UΣVᵀ**
 
-## 11. Tensor Operations
+- **U**: m×m 직교행렬 (왼쪽 특이벡터)
+- **Σ**: m×n 대각행렬 (특이값 σ₁ ≥ σ₂ ≥ ... ≥ 0)
+- **V**: n×n 직교행렬 (오른쪽 특이벡터)
 
-### Outer Product
-$$ \mathbf{u} \otimes \mathbf{v} = \mathbf{u}\mathbf{v}^T $$
+**특이값과 고유값의 관계:**
+**σᵢ = √λᵢ(AᵀA)**
 
-### Kronecker Product
-$$ A \otimes B = \begin{bmatrix} a_{11}B & \cdots & a_{1n}B \\ \vdots & \ddots & \vdots \\ a_{m1}B & \cdots & a_{mn}B \end{bmatrix} $$
+### 스펙트랄 분해 (대칭행렬용)
+**A = QΛQᵀ**
 
-### Trace
-$$ \text{tr}(A) = \sum_{i=1}^n A_{ii} $$
-Properties: tr(A) = tr(A^T), tr(AB) = tr(BA), tr(A+B) = tr(A) + tr(B)
+- **Q**: 정규직교 고유벡터 행렬
+- **Λ**: 대각에 고유값
 
 ---
 
-## 12. Optimization Basics
+## 6. 연립일차방정식
 
-### Gradient Descent
-$$ x_{k+1} = x_k - \alpha\nabla f(x_k) $$
+**가우스 소거법:**
+확대행렬 [A|b] 를 행 사다리꼴로 변환
 
-### Taylor Expansion (Multivariate)
-$$ f(x+h) \approx f(x) + \nabla f(x)^T h + \frac{1}{2}h^T H_f(x)h $$
+**역대입 (Back Substitution):**
+상삼각행렬 Ux = y 의 해를 하단부터 위로 구함
 
-### Lagrange Multipliers
-Maximize $f(x)$ subject to $g(x) = 0$:
-$$ \nabla f(x) = \lambda \nabla g(x) $$
+**최소제곱법 (Least Squares):**
+||Ax - b||²을 최소화하는 해:
+**AᵀAx = Aᵀb**
 
----
+**해:**
+**x = (AᵀA)⁻¹Aᵀb = A⁺b**
 
-## 13. Important Identities
+여기서 **A⁺ = (AᵀA)⁻¹Aᵀ**는 full column rank 일 때의 가역행렬 (pseudoinverse) 입니다.
 
-**Matrix Inverse (Sherman-Morrison):**
-$$ (A + uv^T)^{-1} = A^{-1} - \frac{A^{-1}uv^TA^{-1}}{1 + v^TA^{-1}u} $$
-
-**Matrix Determinant Lemma:**
-$$ \det(A + uv^T) = \det(A)(1 + v^TA^{-1}u) $$
-
-**Woodbury Matrix Identity:**
-$$ (A + UCV)^{-1} = A^{-1} - A^{-1}U(C^{-1} + VA^{-1}U)^{-1}VA^{-1} $$
-
-**Cauchy-Schwarz Inequality:**
-$$ |\mathbf{a} \cdot \mathbf{b}| \leq \|\mathbf{a}\|\|\mathbf{b}\| $$
-
-**Triangle Inequality:**
-$$ \|\mathbf{a} + \mathbf{b}\| \leq \|\mathbf{a}\| + \|\mathbf{b}\| $$
-
-**Pseudoinverse Properties:**
-- $(A^\dagger)^\dagger = A$
-- $(A^T)^\dagger = (A^\dagger)^T$
-- $(AB)^\dagger = B^\dagger A^\dagger$ (under certain conditions)
+**정규방정식 (Normal Equations):**
+기울기를 0 으로 설정하여 유도한 식 **AᵀAx = Aᵀb**
 
 ---
 
-## Quick Reference: Common Eigenvalues
+## 7. 벡터미적분
 
-- Identity: All λ = 1
-- Zero matrix: All λ = 0
-- Diagonal matrix: λ = diagonal elements
-- Projection matrix: λ ∈ {0, 1}
-- Orthogonal matrix: |λ| = 1
-- Symmetric positive-definite: All λ > 0
-- Skew-symmetric: λ is purely imaginary or zero
+### Gradient (기울기)
+스칼라함수 f(x₁, ..., xₙ) 의 기울기:
+
+```
+[ ∂f/∂x₁ ]
+[ ∂f/∂x₂ ]
+[   ...   ]
+[ ∂f/∂xₙ ]
+```
+
+### Jacobian (야코비안)
+벡터함수 f: Rⁿ → Rᵐ의 야코비안 행렬:
+
+```
+[ ∂f₁/∂x₁  ...  ∂f₁/∂xₙ ]
+[   ...      ⋱    ...    ]
+[ ∂fₘ/∂x₁  ...  ∂fₘ/∂xₙ ]
+```
+
+### 발산 (Divergence)
+벡터장 F 의 발산:
+**∇·F = ∂F₁/∂x₁ + ∂F₂/∂x₂ + ∂F₃/∂x₃**
+
+### 회전 (Curl - 3 차원)
+**∇ × F =** 행렬식 형태로:
+| i     j     k     |
+[∂/∂x] [∂/∂y] [∂/∂z] |
+[  F₁   F₂   F₃   ]
+
+### 헤시안 (Hessian)
+2 계 편도함수 행렬:
+
+```
+[ ∂²f/∂x₁²     ∂²f/∂x₁∂x₂    ... ]
+[ ∂²f/∂x₂∂x₁   ∂²f/∂x₂²      ... ]
+[    ...        ...     ⋱       ]
+```
 
 ---
 
-## References
+## 8. 부분공간과 기저
 
-- Strang, Gilbert. "Linear Algebra and Its Applications"
-- Lay, David C. "Linear Algebra and Its Applications"
-- Axler, Sheldon. "Linear Algebra Done Right"
-- Boyd, Stephen. "Convex Optimization"
+### 기본 4 대 부분공간
+- **열공간 (Column space):** Col(A) = {Ax : x ∈ Rⁿ}
+- **영공간 (Null space):** Null(A) = {x : Ax = 0}
+- **행공간 (Row space):** Row(A) = Col(Aᵀ)
+- **왼쪽 영공간:** Null(Aᵀ)
+
+**차수 정리 (Rank-Nullity Theorem):**
+**rank(A) + nullity(A) = n**
+
+여기서 **rank(A)**는 열공간의 차원, **nullity(A)**는 영공간의 차원입니다.
+
+### 기저 (Basis) 의 성질
+- 선형독립인 생성집합
+- 같은 부분공간의 모든 기저는 같은 크기를 가짐
+- 기저 변환행렬 P: **[x]ᴮ = P[x]ᴄ**
 
 ---
 
-*Last updated: March 2026*
+## 9. 직교성 (Orthogonality)
+
+### 직교행렬 (Orthogonal Matrix)
+**QᵀQ = QQᵀ = I**
+
+성질:
+- 열벡터들이 정규직교기저를 이룸
+- 길이 보존: **||Qx|| = ||x||**
+- 내적 보존: **(Qx)·(Qy) = x·y**
+- **det(Q) = ±1**
+
+### 정규직교기저 (Orthonormal Basis)
+- 벡터들이 서로 직교하고 길이가 1
+- 그람 행렬: **QᵀQ = I**
+- 좌표변환: **Pₓᵧ = Qᵀx**
+
+### 그람-슈미트 과정 (Gram-Schmidt)
+기저 {v₁, v₂, ..., vₙ} 을 정규직교기저로 변환:
+
+1. **u₁ = v₁**
+2. **uₖ = vₖ - Σⱼ₌₁ᵏ⁻¹ [(vₖ·uⱼ)/||uⱼ||²] uⱼ**
+3. **eₖ = uₖ / ||uₖ||**
+
+---
+
+## 10. 특수 행렬 타입
+
+### 대칭행렬 (Symmetric Matrix)
+**A = Aᵀ**
+
+성질:
+- 모든 고유값이 실수
+- 직교대각화 가능
+
+### 반대칭행렬 (Skew-Symmetric Matrix)
+**A = -Aᵀ**
+
+성질:
+- 대각원소는 0
+- 고유값은 순허수 또는 0
+
+### 직교행렬 (Orthogonal Matrix)
+**AᵀA = I**
+
+성질:
+- 열벡터들이 정규직교
+- 역행렬 = 전치행렬
+
+### 투영행렬 (Projection Matrix)
+**P = P² = Pᵀ**
+
+열공간으로의 투영:
+**P = A(AᵀA)⁻¹Aᵀ**
+
+### 회전행렬 (2 차원)
+각도 θ 만큼 회전:
+
+```
+[ cos θ  -sin θ ]
+[ sin θ   cos θ ]
+```
+
+### 회전행렬 (3 차원 - 축 주위)
+
+x 축 주위:
+```
+[ 1   0        0      ]
+[ 0   cos θ  -sin θ  ]
+[ 0   sin θ   cos θ  ]
+```
+
+y, z 축 회전도 비슷하게 정의됩니다.
+
+---
+
+## 11. 텐서 연산
+
+### 외적 (Outer Product)
+**u ⊗ v = uvᵀ**
+
+### 크로네커곱 (Kronecker Product)
+```
+[ a₁₁B  ...  a₁ₙB ]
+[  ...    ⋱   ...  ]
+[ aₘ₁B  ...  aₙₙB ]
+```
+
+### 대각합 (Trace)
+**tr(A) = Σᵢ₌₁ⁿ Aᵢᵢ**
+
+성질:
+- **tr(A) = tr(Aᵀ)**
+- **tr(AB) = tr(BA)**
+- **tr(A+B) = tr(A) + tr(B)**
+
+---
+
+## 12. 최적화 기본
+
+### 경사하강법 (Gradient Descent)
+```
+xₖ₊₁ = xₖ - α∇f(xₖ)
+```
+
+여기서 **α**는 학습률 (learning rate) 입니다.
+
+### 테일러 전개 (다변수)
+**f(x + h) ≈ f(x) + ∇f(x)ᵀh + (1/2)hᵀHf(x)h**
+
+### 라그랑주 승수법 (Lagrange Multipliers)
+조건 g(x) = 0 하에서 f(x) 최대화:
+**∇f(x) = λ∇g(x)**
+
+---
+
+## 13. 중요 항등식
+
+### 역행 Sherman-Morrison 공식:
+**(A + uvᵀ)⁻¹ = A⁻¹ - (A⁻¹uvᵀA⁻¹)/(1 + vᵀA⁻¹u)**
+
+### 행렬식 레마:
+**det(A + uvᵀ) = det(A)(1 + vᵀA⁻¹u)**
+
+### 우드버리 항등식:
+**(A + UCV)⁻¹ = A⁻¹ - A⁻¹U(C⁻¹ + VA⁻¹U)⁻¹VA⁻¹**
+
+### 코시-슈바르츠 부등식:
+**|a · b| ≤ ||a|| ||b||**
+
+### 삼각부등식:
+**||a + b|| ≤ ||a|| + ||b||**
+
+### 가역행렬 (Pseudoinverse) 성질:
+- **(A⁺)⁺ = A**
+- **(Aᵀ)⁺ = (A⁺)ᵀ**
+- **(AB)⁺ = B⁺A⁺** (특정 조건하)
+
+---
+
+## 빠르게 찾기: 일반적인 고유값
+
+- **단위행렬**: 모든 λ = 1
+- **영행렬**: 모든 λ = 0
+- **대각행렬**: λ = 대각원소
+- **투영행렬**: λ ∈ {0, 1}
+- **직교행렬**: |λ| = 1
+- **대칭 양정치**: 모든 λ > 0
+- **반대칭**: λ 는 순허수 또는 0
+
+---
+
+## 참고문헌
+
+1. Strang, Gilbert. "Linear Algebra and Its Applications"
+2. Lay, David C. "Linear Algebra and Its Applications"
+3. Axler, Sheldon. "Linear Algebra Done Right"
+4. Boyd, Stephen. "Convex Optimization"
+
+---
+
+*최종 수정일: 2026 년 3 월*

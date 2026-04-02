@@ -4,6 +4,7 @@
 
 ## 문서
 - [fundamentals](./linear-algebra/fundamentals.md)
+- [chapter-1-companion-ko](./linear-algebra/chapter-1-companion-ko.md)
 - [eigens-and-svd](./linear-algebra/eigens-and-svd.md)
 - [matrix-calculus](./linear-algebra/matrix-calculus.md)
 - [optimization-geometry](./linear-algebra/optimization-geometry.md)
